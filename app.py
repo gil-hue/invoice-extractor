@@ -245,7 +245,7 @@ def safe_extract(file_bytes: bytes, filename: str) -> dict:
     except Exception as e:
         empty = {k: "" for k in COL_ORDER}
         empty["source_file"] = filename
-        empty["notes"] = f"שגיאה בחילוץ: {str(e)[:120]}"
+        empty["notes"] = f"שגיאה: {str(e)}"
         return empty
 
 
