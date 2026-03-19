@@ -613,32 +613,27 @@ with tab_main:
         st.markdown("<br>", unsafe_allow_html=True)
 
         with st.expander("📋 קבצים שהועלו", expanded=True):
-            rows = [
-                {
-                    "🗑️":          False,
-                    "📄 שם קובץ": name,
-                    "📏 גודל":     f"{len(b) / 1024:.1f} KB",
-                    "📌 סוג":      name.rsplit(".", 1)[-1].upper(),
-                }
-                for name, b in uploaded_files.items()
-            ]
-            edited_files = st.data_editor(
-                pd.DataFrame(rows),
-                use_container_width=True,
-                hide_index=True,
-                key="files_editor",
-                column_config={
-                    "🗑️":          st.column_config.CheckboxColumn("🗑️ הסר", width="small"),
-                    "📄 שם קובץ": st.column_config.TextColumn(disabled=True),
-                    "📏 גודל":     st.column_config.TextColumn(disabled=True),
-                    "📌 סוג":      st.column_config.TextColumn(disabled=True),
-                },
-            )
-            to_remove = edited_files[edited_files["🗑️"] == True]["📄 שם קובץ"].tolist()
+            hdr1, hdr2, hdr3, hdr4 = st.columns([0.4, 4, 1.5, 1])
+            hdr1.markdown("**🗑️**")
+            hdr2.markdown("**📄 שם קובץ**")
+            hdr3.markdown("**📏 גודל**")
+            hdr4.markdown("**📌 סוג**")
+            st.divider()
+            to_remove = []
+            for name, b in uploaded_files.items():
+                col_cb, col_name, col_size, col_type = st.columns([0.4, 4, 1.5, 1])
+                with col_cb:
+                    if st.checkbox("", key=f"_rm_{name}", label_visibility="hidden"):
+                        to_remove.append(name)
+                col_name.write(name)
+                col_size.write(f"{len(b)/1024:.1f} KB")
+                col_type.write(name.rsplit('.', 1)[-1].upper())
             if to_remove:
+                st.markdown("<br>", unsafe_allow_html=True)
                 if st.button(f"🗑️ הסר {len(to_remove)} קבצים נבחרים", type="secondary", key="remove_files"):
                     for fname in to_remove:
                         st.session_state["uploaded_files"].pop(fname, None)
+                        st.session_state.pop(f"_rm_{fname}", None)
                     remaining = list(st.session_state["uploaded_files"].keys())
                     st.session_state["_last_uploaded_names"] = sorted(remaining)
                     st.session_state.pop("extracted_df", None)
@@ -678,7 +673,21 @@ with tab_main:
 
             display_rename = {c: COL_LABELS.get(c, c) for c in COL_ORDER if c in df_base.columns}
             df_display     = df_base.rename(columns=display_rename)
-            df_display.insert(0, "🗑️", False)
+
+            # ── Per-row delete checkboxes (stable keys) ─────────
+            rows_to_delete = [
+                i for i in df_display.index
+                if st.session_state.get(f"_del_row_{i}")
+            ]
+            if rows_to_delete:
+                if st.button(f"🗑️ הסר {len(rows_to_delete)} חשבוניות נבחרות", type="secondary", key="del_rows"):
+                    new_df = st.session_state["extracted_df"].drop(index=rows_to_delete).reset_index(drop=True)
+                    for i in rows_to_delete:
+                        st.session_state.pop(f"_del_row_{i}", None)
+                    st.session_state["extracted_df"] = new_df
+                    st.rerun()
+
+            df_display.insert(0, "🗑️", [st.session_state.get(f"_del_row_{i}", False) for i in df_display.index])
 
             edited_df = st.data_editor(
                 df_display,
@@ -697,13 +706,9 @@ with tab_main:
                 },
             )
 
-            # ── Remove selected rows ────────────────────────────
-            rows_to_delete = edited_df[edited_df["🗑️"] == True].index.tolist()
-            if rows_to_delete:
-                if st.button(f"🗑️ הסר {len(rows_to_delete)} חשבוניות נבחרות", type="secondary", key="del_rows"):
-                    new_df = st.session_state["extracted_df"].drop(index=rows_to_delete).reset_index(drop=True)
-                    st.session_state["extracted_df"] = new_df
-                    st.rerun()
+            # sync checkbox column back to session_state
+            for i in df_display.index:
+                st.session_state[f"_del_row_{i}"] = bool(edited_df.at[i, "🗑️"])
 
             edited_df = edited_df.drop(columns=["🗑️"])
 
