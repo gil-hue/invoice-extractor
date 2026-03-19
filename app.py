@@ -615,13 +615,34 @@ with tab_main:
         with st.expander("📋 קבצים שהועלו", expanded=True):
             rows = [
                 {
+                    "🗑️":          False,
                     "📄 שם קובץ": name,
                     "📏 גודל":     f"{len(b) / 1024:.1f} KB",
                     "📌 סוג":      name.rsplit(".", 1)[-1].upper(),
                 }
                 for name, b in uploaded_files.items()
             ]
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            edited_files = st.data_editor(
+                pd.DataFrame(rows),
+                use_container_width=True,
+                hide_index=True,
+                key="files_editor",
+                column_config={
+                    "🗑️":          st.column_config.CheckboxColumn("🗑️ הסר", width="small"),
+                    "📄 שם קובץ": st.column_config.TextColumn(disabled=True),
+                    "📏 גודל":     st.column_config.TextColumn(disabled=True),
+                    "📌 סוג":      st.column_config.TextColumn(disabled=True),
+                },
+            )
+            to_remove = edited_files[edited_files["🗑️"] == True]["📄 שם קובץ"].tolist()
+            if to_remove:
+                if st.button(f"🗑️ הסר {len(to_remove)} קבצים נבחרים", type="secondary", key="remove_files"):
+                    for fname in to_remove:
+                        st.session_state["uploaded_files"].pop(fname, None)
+                    remaining = list(st.session_state["uploaded_files"].keys())
+                    st.session_state["_last_uploaded_names"] = sorted(remaining)
+                    st.session_state.pop("extracted_df", None)
+                    st.rerun()
 
         # ── Step 2: Extract ────────────────────────────────────
         st.markdown(
@@ -657,6 +678,7 @@ with tab_main:
 
             display_rename = {c: COL_LABELS.get(c, c) for c in COL_ORDER if c in df_base.columns}
             df_display     = df_base.rename(columns=display_rename)
+            df_display.insert(0, "🗑️", False)
 
             edited_df = st.data_editor(
                 df_display,
@@ -664,6 +686,7 @@ with tab_main:
                 hide_index=True,
                 key="invoice_editor",
                 column_config={
+                    "🗑️":                            st.column_config.CheckboxColumn("🗑️ הסר", width="small"),
                     COL_LABELS["source_file"]:       st.column_config.TextColumn(disabled=True, width="medium"),
                     COL_LABELS["invoice_number"]:    st.column_config.TextColumn(width="small"),
                     COL_LABELS["date"]:              st.column_config.TextColumn(width="small"),
@@ -673,6 +696,16 @@ with tab_main:
                     COL_LABELS["notes"]:             st.column_config.TextColumn(width="large"),
                 },
             )
+
+            # ── Remove selected rows ────────────────────────────
+            rows_to_delete = edited_df[edited_df["🗑️"] == True].index.tolist()
+            if rows_to_delete:
+                if st.button(f"🗑️ הסר {len(rows_to_delete)} חשבוניות נבחרות", type="secondary", key="del_rows"):
+                    new_df = st.session_state["extracted_df"].drop(index=rows_to_delete).reset_index(drop=True)
+                    st.session_state["extracted_df"] = new_df
+                    st.rerun()
+
+            edited_df = edited_df.drop(columns=["🗑️"])
 
             # ── Totals strip ───────────────────────────────────
             st.markdown("<br>", unsafe_allow_html=True)
