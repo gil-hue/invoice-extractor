@@ -1,20 +1,23 @@
-credentials:
-  usernames:
-    "gil@zed66.com":
-      email: gil@zed66.com
-      name: Gil Admin
-      password: "$2b$12$IvIIEFFytxyg.IpbD6KoDuLkNNhuJwGmMIc4PIVabTxHmQ8kGV8X2"
-      role: admin
-    "gil@greenseo.co.il":
-      email: gil@greenseo.co.il
-      name: Gil User
-      password: "$2b$12$3xbpHiaFweRaA0JEy.reQeWCLjvtrDubUWPuqyzQdYoLCAqPhAEe."
-      role: user
-
 cookie:
   expiry_days: 7
   key: invoice_extractor_secret_2026
   name: invoice_extractor_auth
-
+credentials:
+  usernames:
+    Moshe:
+      email: 'moshe@cohen-cpa.co.il '
+      name: Moshe Cohen
+      password: $2b$12$mMm0MfkGKfC1xdbWDVPumu1leqm5ktljVhdRDbRRqEp3BhTVKgr4.
+      role: user
+    gil@greenseo.co.il:
+      email: gil@greenseo.co.il
+      name: Gil User
+      password: $2b$12$3xbpHiaFweRaA0JEy.reQeWCLjvtrDubUWPuqyzQdYoLCAqPhAEe.
+      role: user
+    gil@zed66.com:
+      email: gil@zed66.com
+      name: Gil Admin
+      password: $2b$12$IvIIEFFytxyg.IpbD6KoDuLkNNhuJwGmMIc4PIVabTxHmQ8kGV8X2
+      role: admin
 pre-authorized:
   emails: []
