@@ -4,20 +4,20 @@ cookie:
   name: invoice_extractor_auth
 credentials:
   usernames:
-    Moshe:
-      email: 'moshe@cohen-cpa.co.il '
-      name: Moshe Cohen
-      password: $2b$12$mMm0MfkGKfC1xdbWDVPumu1leqm5ktljVhdRDbRRqEp3BhTVKgr4.
-      role: user
     gil@greenseo.co.il:
       email: gil@greenseo.co.il
       name: Gil User
-      password: $2b$12$3xbpHiaFweRaA0JEy.reQeWCLjvtrDubUWPuqyzQdYoLCAqPhAEe.
+      password: $2b$12$T2G5SN.9sVbpUxFovIiACOYNUk0bSFk4Z/Zz2sfdcoX/F2ubdbN0C
       role: user
     gil@zed66.com:
       email: gil@zed66.com
       name: Gil Admin
       password: $2b$12$IvIIEFFytxyg.IpbD6KoDuLkNNhuJwGmMIc4PIVabTxHmQ8kGV8X2
       role: admin
+    moshe:
+      email: 'moshe@cohen-cpa.co.il '
+      name: Moshe Cohen
+      password: $2b$12$mMm0MfkGKfC1xdbWDVPumu1leqm5ktljVhdRDbRRqEp3BhTVKgr4.
+      role: user
 pre-authorized:
   emails: []
