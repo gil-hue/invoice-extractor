@@ -634,8 +634,8 @@ with tab_main:
                     for fname in to_remove:
                         st.session_state["uploaded_files"].pop(fname, None)
                         st.session_state.pop(f"_rm_{fname}", None)
-                    remaining = list(st.session_state["uploaded_files"].keys())
-                    st.session_state["_last_uploaded_names"] = sorted(remaining)
+                    # ⚠️ אל תעדכן _last_uploaded_names — ה-file_uploader עדיין מחזיר את כל הקבצים
+                    # אם נעדכן לרשימה קצרה, הריראן הבא יזהה מיסמאץ' וישחזר הכל
                     st.session_state.pop("extracted_df", None)
                     st.rerun()
 
