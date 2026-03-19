@@ -1,5 +1,11 @@
 [
   {
+    "timestamp": "19/03/2026 11:51",
+    "user": "gil@zed66.com",
+    "action": "ניהול משתמשים",
+    "details": "נוסף משתמש: Moshe"
+  },
+  {
     "timestamp": "19/03/2026 11:47",
     "user": "gil@zed66.com",
     "action": "הורדת Excel",
