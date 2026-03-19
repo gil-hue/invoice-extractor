@@ -1,5 +1,11 @@
 [
   {
+    "timestamp": "19/03/2026 11:47",
+    "user": "gil@zed66.com",
+    "action": "הורדת Excel",
+    "details": "Invoices_2026-03-19.xlsx | 1 חשבוניות"
+  },
+  {
     "timestamp": "19/03/2026 11:45",
     "user": "gil@zed66.com",
     "action": "העלאה וחילוץ",
