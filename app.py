@@ -673,21 +673,7 @@ with tab_main:
 
             display_rename = {c: COL_LABELS.get(c, c) for c in COL_ORDER if c in df_base.columns}
             df_display     = df_base.rename(columns=display_rename)
-
-            # ── Per-row delete checkboxes (stable keys) ─────────
-            rows_to_delete = [
-                i for i in df_display.index
-                if st.session_state.get(f"_del_row_{i}")
-            ]
-            if rows_to_delete:
-                if st.button(f"🗑️ הסר {len(rows_to_delete)} חשבוניות נבחרות", type="secondary", key="del_rows"):
-                    new_df = st.session_state["extracted_df"].drop(index=rows_to_delete).reset_index(drop=True)
-                    for i in rows_to_delete:
-                        st.session_state.pop(f"_del_row_{i}", None)
-                    st.session_state["extracted_df"] = new_df
-                    st.rerun()
-
-            df_display.insert(0, "🗑️", [st.session_state.get(f"_del_row_{i}", False) for i in df_display.index])
+            df_display.insert(0, "🗑️", False)
 
             edited_df = st.data_editor(
                 df_display,
@@ -706,9 +692,13 @@ with tab_main:
                 },
             )
 
-            # sync checkbox column back to session_state
-            for i in df_display.index:
-                st.session_state[f"_del_row_{i}"] = bool(edited_df.at[i, "🗑️"])
+            rows_to_delete = edited_df.index[edited_df["🗑️"] == True].tolist()
+            if rows_to_delete:
+                if st.button(f"🗑️ הסר {len(rows_to_delete)} חשבוניות נבחרות", type="secondary", key="del_rows"):
+                    new_df = st.session_state["extracted_df"].drop(index=rows_to_delete).reset_index(drop=True)
+                    st.session_state["extracted_df"] = new_df
+                    st.session_state.pop("invoice_editor", None)
+                    st.rerun()
 
             edited_df = edited_df.drop(columns=["🗑️"])
 
