@@ -2,6 +2,12 @@
   {
     "timestamp": "19/03/2026 13:54",
     "user": "gil@greenseo.co.il",
+    "action": "הורדת Excel",
+    "details": "Invoices_2026-03-19.xlsx | 2 חשבוניות"
+  },
+  {
+    "timestamp": "19/03/2026 13:54",
+    "user": "gil@greenseo.co.il",
     "action": "העלאה וחילוץ",
     "details": "2 חשבוניות: IMG_4442.JPG, Invoice_18088_source.pdf"
   },
