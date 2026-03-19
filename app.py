@@ -239,6 +239,36 @@ def extract_invoice(file_bytes: bytes, filename: str) -> dict:
     return data
 
 
+def save_config(new_config: dict):
+    """Save config to local disk and push to GitHub."""
+    try:
+        with open("config.yaml", "w", encoding="utf-8") as f:
+            yaml.dump(new_config, f, allow_unicode=True, default_flow_style=False)
+    except Exception:
+        pass
+    try:
+        token = st.secrets.get("GITHUB_TOKEN", "")
+        repo  = st.secrets.get("GITHUB_REPO", "gil-hue/invoice-extractor")
+        if not token:
+            return
+        url     = f"https://api.github.com/repos/{repo}/contents/config.yaml"
+        headers = {"Authorization": f"token {token}"}
+        r       = requests.get(url, headers=headers)
+        if r.status_code != 200:
+            return
+        sha     = r.json()["sha"]
+        content = base64.b64encode(
+            yaml.dump(new_config, allow_unicode=True, default_flow_style=False).encode()
+        ).decode()
+        requests.put(url, headers=headers, json={
+            "message": "Update config (user management)",
+            "content": content,
+            "sha": sha,
+        })
+    except Exception:
+        pass
+
+
 def safe_extract(file_bytes: bytes, filename: str) -> dict:
     try:
         return extract_invoice(file_bytes, filename)
@@ -369,14 +399,96 @@ st.markdown("""
 
 # ── Tabs ───────────────────────────────────────────────────────
 if is_admin:
-    tab_main, tab_log = st.tabs(["🧾 חילוץ חשבוניות", "📋 לוג פעולות"])
+    tab_main, tab_log, tab_users = st.tabs(["🧾 חילוץ חשבוניות", "📋 לוג פעולות", "👥 ניהול משתמשים"])
 else:
-    tab_main = st.tabs(["🧾 חילוץ חשבוניות"])[0]
-    tab_log  = None
+    tab_main  = st.tabs(["🧾 חילוץ חשבוניות"])[0]
+    tab_log   = None
+    tab_users = None
 
 # ══════════════════════════════════════════════════════════════
 #  LOG TAB (admin only)
 # ══════════════════════════════════════════════════════════════
+if is_admin and tab_users:
+    with tab_users:
+        st.markdown('<div class="section-header">👥 ניהול משתמשים</div>', unsafe_allow_html=True)
+
+        users = config["credentials"]["usernames"]
+
+        # ── Users table ────────────────────────────────────────
+        user_rows = [
+            {
+                "👤 שם משתמש": uname,
+                "📛 שם מלא":   uinfo.get("name", ""),
+                "📧 אימייל":   uinfo.get("email", ""),
+                "🔑 תפקיד":    "אדמין" if uinfo.get("role") == "admin" else "משתמש",
+            }
+            for uname, uinfo in users.items()
+        ]
+        st.dataframe(pd.DataFrame(user_rows), use_container_width=True, hide_index=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # ── Add user ────────────────────────────────────────────
+        with st.expander("➕ הוסף משתמש חדש", expanded=False):
+            with st.form("add_user_form"):
+                c1, c2 = st.columns(2)
+                with c1:
+                    nu_username = st.text_input("שם משתמש *")
+                    nu_name     = st.text_input("שם מלא")
+                with c2:
+                    nu_email    = st.text_input("אימייל")
+                    nu_password = st.text_input("סיסמה *", type="password")
+                nu_role = st.selectbox("תפקיד", ["משתמש", "אדמין"])
+                if st.form_submit_button("✅ הוסף משתמש", use_container_width=True):
+                    if not nu_username or not nu_password:
+                        st.error("שם משתמש וסיסמה הם שדות חובה")
+                    elif nu_username in users:
+                        st.error(f"שם המשתמש '{nu_username}' כבר קיים")
+                    else:
+                        hashed = bcrypt.hashpw(nu_password.encode(), bcrypt.gensalt()).decode()
+                        config["credentials"]["usernames"][nu_username] = {
+                            "name":     nu_name,
+                            "email":    nu_email,
+                            "password": hashed,
+                            "role":     "admin" if nu_role == "אדמין" else "user",
+                        }
+                        save_config(config)
+                        write_log("ניהול משתמשים", f"נוסף משתמש: {nu_username}")
+                        st.success(f"✅ משתמש '{nu_username}' נוסף בהצלחה!")
+                        st.rerun()
+
+        # ── Change password ─────────────────────────────────────
+        with st.expander("🔒 שינוי סיסמה למשתמש", expanded=False):
+            with st.form("change_pass_form"):
+                cp_user = st.selectbox("בחר משתמש", list(users.keys()), key="cp_user")
+                cp_pass = st.text_input("סיסמה חדשה *", type="password")
+                if st.form_submit_button("✅ עדכן סיסמה", use_container_width=True):
+                    if not cp_pass:
+                        st.error("יש להזין סיסמה חדשה")
+                    else:
+                        hashed = bcrypt.hashpw(cp_pass.encode(), bcrypt.gensalt()).decode()
+                        config["credentials"]["usernames"][cp_user]["password"] = hashed
+                        save_config(config)
+                        write_log("ניהול משתמשים", f"עודכנה סיסמה: {cp_user}")
+                        st.success(f"✅ סיסמת '{cp_user}' עודכנה בהצלחה!")
+
+        # ── Delete user ─────────────────────────────────────────
+        with st.expander("🗑️ מחיקת משתמש", expanded=False):
+            deletable = [u for u in users.keys() if u != current_user]
+            if deletable:
+                with st.form("del_user_form"):
+                    del_user = st.selectbox("בחר משתמש למחיקה", deletable, key="del_user")
+                    st.warning(f"⚠️ פעולה זו תמחק לצמיתות את המשתמש '{del_user}'")
+                    if st.form_submit_button("🗑️ מחק משתמש", use_container_width=True):
+                        del config["credentials"]["usernames"][del_user]
+                        save_config(config)
+                        write_log("ניהול משתמשים", f"נמחק משתמש: {del_user}")
+                        st.success(f"✅ משתמש '{del_user}' נמחק בהצלחה!")
+                        st.rerun()
+            else:
+                st.info("אין משתמשים נוספים למחיקה (לא ניתן למחוק את עצמך)")
+
+
 if is_admin and tab_log:
     with tab_log:
         st.markdown('<div class="section-header">📋 לוג פעולות</div>', unsafe_allow_html=True)
