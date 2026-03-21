@@ -17,7 +17,7 @@ credentials:
     moshe:
       email: 'moshe@cohen-cpa.co.il '
       name: Moshe Cohen
-      password: $2b$12$mMm0MfkGKfC1xdbWDVPumu1leqm5ktljVhdRDbRRqEp3BhTVKgr4.
+      password: $2b$12$3l.7cY3xfq3tFihow5bbTO/WJGGyFrUgTnRdXV6p6Bi0.hu0FE2KG
       role: user
 pre-authorized:
   emails: []
